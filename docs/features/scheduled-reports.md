@@ -70,7 +70,7 @@ Keep in mind:
 
 ### A cron line on the server
 
-Run the command from the project root:
+Run the command from the project root. The report screen shows the line to copy, with the expression of `THELIA_SCHEDULE_REPORT_MAILS` when it is set:
 
 ```shell
 */15 * * * * cd /path/to/project && php bin/console report:send-due
@@ -82,7 +82,9 @@ Do not use a cron line and the shop schedule together: the command would run twi
 
 ## Send one report now
 
-[`report:mail <id>`](../reference/cli/report_mail.md) sends one report at once, over the period relative to today. It does not change what the schedule has already sent.
+[`report:mail <id>`](../reference/cli/report_mail.md) sends one report at once, over the period relative to today. The **Send now** button of the report screen does the same. It does not change what the schedule has already sent.
+
+While a run of `report:send-due` is sending the same report, the immediate send is refused and nothing is sent: try again a few minutes later.
 
 ## Large files
 
@@ -99,7 +101,8 @@ The file of a link is kept in `var/report-mail`. The command `maintenance:purge`
 
 - A period is sent once to every recipient. When the command runs again, it sends nothing new until the next period is due.
 - Each recipient is recorded as soon as their e-mail is sent. A run that stops halfway, during a deployment for example, leaves the next run with the recipients not yet served only.
-- When the send fails for some recipients, only those recipients are tried again, by the next runs of the command. After three tries over the same period, they are given up until the next period, and the log says how many.
+- When the send fails for some recipients, only those recipients are tried again, by the next runs of the command. A recipient removed from the report in the meantime is not tried again. After three tries over the same period, they are given up until the next period, and the log says how many.
+- When the whole send fails, for example because the shop has no sender address, the run counts as a try too: the period is given up after the third one.
 - The command ends with the exit code 1 when a report could not be sent to everyone, so that a scheduler can raise an alert.
 - A new report is due as soon as its latest scheduled moment has passed. It does not wait for the next one.
 

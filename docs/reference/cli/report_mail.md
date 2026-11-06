@@ -8,8 +8,11 @@ Send one scheduled report now, whatever its schedule says.
 The report covers the period it is set for, relative to today. What the schedule has already sent
 is left alone: only the date of the last send changes.
 
-The command ends with `1` when the report could not be sent to every recipient, or when the report
-does not exist. Its output holds ids and counts only.
+It is refused while `report:send-due` is sending the same report: nothing is sent, try again a few
+minutes later.
+
+The command ends with `1` when the report could not be sent to every recipient, when the report
+does not exist, or when another run is sending it. Its output holds ids and counts only.
 
 ## Usage
 ```shell
