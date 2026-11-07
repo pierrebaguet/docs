@@ -5,7 +5,7 @@ sidebar_position: 11
 
 # Accounting Exports
 
-Added in Thelia 3.3.
+Added in Thelia 3.4.
 
 Two exports give the accountant the sales of a period in a file their software loads, instead
 of an order export to rework: the **sales journal**, one row per accounting entry, and the
@@ -22,6 +22,7 @@ Set it in the back office, under Configuration > Accounting, before the first ex
 | Customer account | `411000` | debited of every invoice |
 | Shipping account | `708500` | credited of the shipping, excluding tax |
 | One row per tax rate | `20` → `706200`, `445720` | the account of the sales at that rate, and of the tax collected (not needed at 0) |
+| Account of commercial credit notes | `709000` | optional: debited of the commercial credit notes; the sales account of their rate when left empty |
 
 They are the `accounting_*` configuration variables, which `thelia:config` reads and writes;
 the rates are one variable, `accounting_rate_accounts`, as `20:706200:445720,5.5:706055:445705,0:706000`.
@@ -31,8 +32,8 @@ account is ever made up.
 ## The sales journal
 
 The invoices of the period, by **invoice date**: an order placed in January and invoiced in
-February is in February. An order without invoice reference has no entry (the report counts
-them, the orders placed before the invoice numbering was switched on among them).
+February is in February. An order without invoice reference, or without invoice date, has no
+entry; the report counts them (see [The report](#the-report)).
 
 Each invoice is a piece, balanced to the cent:
 
@@ -53,6 +54,33 @@ currency is booked in the shop currency at the rate of the order, with its own a
 currency beside it. An order that cannot be booked, for instance taxed at a rate the chart
 has no account for, is left out and named in the report.
 
+### A discount on an order with several rates
+
+Thelia takes the tax out of an order discount at the average of the rates of the order lines,
+not weighted by their amounts. On an order that mixes rates, the invoice then collects a little
+more tax at one rate and a little less at another than its amounts excluding tax say. The
+journal books the invoice as it was issued, and the report names each such order with the tax
+collected and the tax the rate gives: check them before the tax return.
+
+## Credit notes
+
+When the CreditNote module is active, its credit notes are in the sales journal: a credit note
+is booked once it has a credit note number and an invoiced status (accepted or used), at its
+date, between the invoices of the same period. Each one is the reverse of an invoice: the
+customer is credited, the products, the shipping and the tax it gives back are debited by rate.
+
+A commercial credit note (a rebate, a discount, a refund of a difference) is a reduction granted
+after the invoice: it is debited to the account of commercial credit notes when it is set
+(709 in the French chart), to the sales account of its rate otherwise. A discount granted on the
+invoice itself stays on the sales account, net.
+
+A credit note used to pay an order is a settlement, not a sale given back: it is not in the
+sales journal. The tax summary takes the credit notes off their month.
+
+The journal reads the tables of CreditNote 4.4.0. When the module is active but its tables
+cannot be read, or when no credit note module is installed, the report says that the credit
+notes are not in the journal: refunds made without a credit note never are.
+
 ## Formats
 
 The columns of the sales journal are the 18 fields of the French accounting entries file
@@ -65,7 +93,7 @@ The columns of the sales journal are the 18 fields of the French accounting entr
 | `EcritureDate`, `PieceDate`, `ValidDate` | the invoice date |
 | `CompteNum`, `CompteLib` | the account and its label |
 | `CompAuxNum`, `CompAuxLib` | the customer reference and name, on the customer line only |
-| `EcritureLib` | `Facture <reference> <customer>` (in the language of the export) |
+| `EcritureLib` | `Facture <reference> <customer>`, `Avoir <reference> <customer>` for a credit note (in the language of the export) |
 | `Debit`, `Credit` | the amount, in the shop currency |
 | `EcritureLet`, `DateLet` | empty |
 | `Montantdevise`, `Idevise` | the amount and currency of an order in another currency |
@@ -74,6 +102,10 @@ Choose the **FEC** format to get the file itself: tab separated, the field names
 line (even for a period without invoice), dates as YYYYMMDD, amounts with a decimal comma,
 UTF-8. Rename it `<SIREN>FEC<YYYYMMDD>.txt` before handing it to the tax administration. Choose
 **CSV** to read it in a spreadsheet. The labels follow the language chosen for the export.
+
+The FEC file is written as the format asks, without the guard the other exports put in front of
+a value a spreadsheet would read as a formula (a customer name starting with `=`, for
+instance). Open it in accounting software, not in a spreadsheet.
 
 ## The tax summary
 
@@ -84,18 +116,37 @@ the journal, to the cent: the figures to check the tax return against.
 
 ## The report
 
-After the download, the export screen shows what the export did: the number of pieces and the
-totals of debit and credit, the orders left out and why, how many orders of the period have no
-invoice reference. On the command line, the report follows the path of the file:
+The page of the export job shows what the export did, once it is done: the number of pieces
+and the totals of debit and credit, the number of credit notes among them, the orders and
+credit notes left out and why, the orders whose discount moved tax between rates, and how many
+orders have no entry:
+
+- the orders of the period with an invoice date but no invoice reference;
+- the orders placed in the period with an invoice reference but no invoice date: they belong
+  to no period, book them by hand;
+- the orders placed in the period that are not invoiced.
+
+On the command line, the report follows the path of the file:
 
 ```shell
 php Thelia export thelia.export.sales_journal thelia.fec --start=2026-02-01 --end=2026-02-28 --locale=fr_FR
 php Thelia export thelia.export.tax_summary thelia.csv --start=2026-01-01 --end=2026-03-31
 ```
 
+## Keeping the files, and anonymized customers
+
+The sales journal of a closed period is a document to keep: export it at the closing and keep
+the file for as long as the law asks you to keep your accounting records. The shop does not keep
+it for you: the file of an export is deleted once it is a day old, by the next export or by
+`maintenance:purge`, and the export job and its report a week after it is done (see [Personal data](../security/personal-data.md#background-jobs)). The
+report names orders and credit notes by their reference only.
+
+Anonymizing a customer keeps their orders, amounts, invoice numbers and dates, and the customer
+reference: a journal exported again after it has the same pieces and the same amounts, but the
+name of the customer (`CompAuxLib`) reads `anonymous anonymous`. The credit notes keep the
+address the CreditNote module copied, which the anonymization of the core does not reach.
+
 ## Not covered
 
-- **Credit notes.** No credit note module runs on Thelia 3 yet: refunds and credit notes are
-  not in the journal, and the report says so.
 - Matching (`EcritureLet`), the payments received and the bank reconciliation.
 - Sending the exports by mail on a schedule.
