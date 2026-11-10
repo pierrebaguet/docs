@@ -68,6 +68,9 @@ When the CreditNote module is active, its credit notes are in the sales journal:
 is booked once it has a credit note number and an invoiced status (accepted or used), at its
 date, between the invoices of the same period. Each one is the reverse of an invoice: the
 customer is credited, the products, the shipping and the tax it gives back are debited by rate.
+A credit note in another currency is booked at its own exchange rate, or at the rate of its
+order when it has none, which is what CreditNote 4.4.0 records: it then reverses its invoice
+to the cent. A credit note with neither a rate nor an order is left out and named in the report.
 
 A commercial credit note (a rebate, a discount, a refund of a difference) is a reduction granted
 after the invoice: it is debited to the account of commercial credit notes when it is set
@@ -102,6 +105,8 @@ Choose the **FEC** format to get the file itself: tab separated, the field names
 line (even for a period without invoice), dates as YYYYMMDD, amounts with a decimal comma,
 UTF-8. Rename it `<SIREN>FEC<YYYYMMDD>.txt` before handing it to the tax administration. Choose
 **CSV** to read it in a spreadsheet. The labels follow the language chosen for the export.
+The FEC format is offered to the sales journal only: the other exports, the tax summary
+included, are refused in that format, and the imports do not read it.
 
 The FEC file is written as the format asks, without the guard the other exports put in front of
 a value a spreadsheet would read as a formula (a customer name starting with `=`, for
@@ -126,12 +131,19 @@ orders have no entry:
   to no period, book them by hand;
 - the orders placed in the period that are not invoiced.
 
+The report names the first 100 warnings and counts the others in a last line, so that a long
+period never keeps the job from ending.
+
 On the command line, the report follows the path of the file:
 
 ```shell
 php Thelia export thelia.export.sales_journal thelia.fec --start=2026-02-01 --end=2026-02-28 --locale=fr_FR
 php Thelia export thelia.export.tax_summary thelia.csv --start=2026-01-01 --end=2026-03-31
 ```
+
+Both exports can be sent as scheduled report mails. The mail opens with their totals: the
+number of pieces, of which credit notes, and the debit and credit of the journal; the amount
+taxed, the tax collected and the number of pieces of the tax summary.
 
 ## Keeping the files, and anonymized customers
 
