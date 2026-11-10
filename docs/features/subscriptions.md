@@ -178,10 +178,20 @@ php Thelia subscription:bill-due --dry-run
 A merchant with the `admin.subscription` right sees the subscriptions of the shop. The right is granted
 profile by profile: existing profiles do not have it until it is given.
 
-- List the subscriptions and filter them by state.
-- Open one to read its installments, its orders, its history and the last error of a failed charge.
-- Cancel, pause, resume, or reactivate a suspended subscription.
-- Manage the plans of a product.
+- List the subscriptions and filter them by state, plan, next billing date, or a search on the
+  reference and the customer's name or e-mail. The active and payment-failed subscriptions are
+  counted above the list.
+- Open one to read its terms, its payment method (by its label), its installments with their
+  orders, and its history.
+- With the update right: cancel, pause (when the plan allows it), resume, or reactivate a
+  suspended subscription or one whose payment failed. Reactivating charges the failed
+  installment again at once; the subscription becomes active when that charge is paid.
+- Read the monthly recurring revenue on the dashboard, and the subscriptions of a customer on
+  the customer sheet.
+
+Plans are set up in the **Subscription plans** tab of the product sheet, with the product right
+(a plan belongs to the catalogue): title per language, price per currency (the default currency
+is required), period, trial, number of installments, commitment, pausable, online.
 
 Whatever an administrator does is recorded in the history with the administrator as the actor.
 
