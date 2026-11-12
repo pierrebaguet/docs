@@ -69,8 +69,8 @@ is booked once it has a credit note number and an invoiced status (accepted or u
 date, between the invoices of the same period. Each one is the reverse of an invoice: the
 customer is credited, the products, the shipping and the tax it gives back are debited by rate.
 A credit note in another currency is booked at its own exchange rate, or at the rate of its
-order when it has none, which is what CreditNote 4.4.0 records: it then reverses its invoice
-to the cent. A credit note with neither a rate nor an order is left out and named in the report.
+order when it has none. CreditNote 4.4.0 records no rate on its credit notes, so the rate of the
+order is the one used: the credit note then reverses its invoice to the cent. A credit note with neither a rate nor an order is left out and named in the report.
 
 A commercial credit note (a rebate, a discount, a refund of a difference) is a reduction granted
 after the invoice: it is debited to the account of commercial credit notes when it is set
@@ -115,7 +115,7 @@ instance). Open it in accounting software, not in a spreadsheet.
 ## The tax summary
 
 Per month of invoice and per tax rate, the highest first: the amount taxed (products and
-shipping), the tax and the number of invoices.
+shipping), the tax and the number of pieces (invoices and credit notes).
 It is read from the same pieces as the sales journal, so its taxes add up to the tax lines of
 the journal, to the cent: the figures to check the tax return against.
 
@@ -161,4 +161,3 @@ address the CreditNote module copied, which the anonymization of the core does n
 ## Not covered
 
 - Matching (`EcritureLet`), the payments received and the bank reconciliation.
-- Sending the exports by mail on a schedule.
