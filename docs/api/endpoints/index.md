@@ -96,9 +96,9 @@ These routes need a customer JWT and only reach the subscriptions of that custom
 | `GET /api/front/account/subscriptions` | The subscriptions of the customer. |
 | `GET /api/front/account/subscriptions/{id}` | One subscription, with its `installments`. |
 | `POST /api/front/account/subscriptions/{id}/cancel` | Cancels it. No body. |
-| `POST /api/front/account/subscriptions/{id}/pause` | Pauses it, when its plan allows. No body. |
-| `POST /api/front/account/subscriptions/{id}/resume` | Resumes it. No body. |
-| `POST /api/front/account/subscriptions/{id}/payment_method` | Changes the payment method. |
+| `POST /api/front/account/subscriptions/{id}/pause` | Pauses an active subscription, when its plan allows. No body. |
+| `POST /api/front/account/subscriptions/{id}/resume` | Resumes a paused subscription, and nothing else. No body. |
+| `POST /api/front/account/subscriptions/{id}/payment_method` | Changes the payment method, of any subscription still billed but a cancelled one. |
 
 ```http
 POST /api/front/account/subscriptions/3/payment_method
@@ -154,6 +154,11 @@ The payment method is shown by its label only, never by its token.
 `GET /api/front/subscription_plans?product.id=12` lists the visible plans of an online product, and
 `GET /api/front/subscription_plans/{id}` reads one. `price` is the price of one installment in the
 currency being browsed.
+
+A plan follows its product. The plan of a product the visitor may not see (a private drop they are
+not part of, a category closed to their customer group, a rule of a module) is left out of the list
+and answers `404` by id, as the product does. When the product shows no price to the visitor (prices
+for signed-in customers only, prices on request), the plan comes without `price`.
 
 ```json
 {
