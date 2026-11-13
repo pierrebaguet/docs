@@ -39,17 +39,22 @@ A subscription is one sale element, a quantity and a plan.
 
 - A product with a visible plan offers the plans on its page. The customer picks one and adds it to the cart.
 - The customer must be signed in. A visitor who is not signed in cannot subscribe.
-- A cart that holds a plan holds nothing else, and holds one plan line only. Adding anything else is refused with a message.
+- A cart that holds a plan holds nothing else, and holds one plan line only. Adding anything else is refused with a message. This is deliberate: one order takes one subscription, with the payment method its installments will be charged to.
+- A product whose price is on request offers no plan. A visitor who may not see a product, or its price, does not see its plans, or their price, either.
 - With a trial, the first order is at zero. Without one, the first installment is charged at the checkout.
+- With a trial, the cart and the payment step give the date of the first charge: the date the billing will use, if the order is paid that day.
 - Only the payment methods that can charge a stored method without the customer are offered. A shop with no such module cannot sell a subscription. See [Charging a stored method off session](../modules/recurring-payments.md).
 - The subscription is created when the first order turns paid.
 
 In their account, at **My subscriptions**, a customer sees each subscription with its status,
 its next payment date and its installments, and can:
 
-- change the payment method, to one of the methods they stored;
-- pause and resume, when the plan allows it;
+- change the payment method, to one of the methods they stored, until the subscription is cancelled;
+- pause an active subscription, when the plan allows it, and resume it;
 - cancel.
+
+Resuming only undoes a pause. A suspended subscription comes back when the installment it owes is
+paid, and a trial ends with its first charge: neither can be resumed.
 
 Cancelling takes effect at the end of the paid period. If the plan has a commitment, the
 installments still owed are billed until it is reached. The subscription is served until then.
@@ -74,7 +79,7 @@ What moves a subscription from one state to another:
 | `trial`, `active` | `payment_failed` | A charge is declined, or the bank asks the customer to confirm it. |
 | `payment_failed` | `active` | A retry is paid. |
 | `payment_failed` | `suspended` | The attempts are used up. |
-| `suspended` | `active` | The customer gives another method, or the shop reactivates, and the charge is paid. |
+| `suspended` | `active` | The customer gives another method, or the shop reactivates, and the charge is paid. A new period starts on the day of the payment. |
 | `active` | `paused` | The customer or the merchant pauses (plan must be pausable for the customer). |
 | `paused` | `active` | Resume. The paused weeks are not charged: a new period starts at that date. |
 | `trial`, `active`, `payment_failed`, `suspended`, `paused` | `cancelled` | The customer or the merchant cancels. |
@@ -113,7 +118,11 @@ When the provider cannot be reached (a timeout, an outage), nothing is declined.
 again an hour later and does not count as a failed attempt.
 
 To get a suspended subscription going again, the customer gives another payment method, or the
-merchant reactivates it. The installment that is due is then charged at once, on a new order.
+merchant reactivates it. The installment that is due is then charged at once, on a new order. Once it
+is paid, a new period starts on the day of the payment, and the next installment falls one period
+later, on that day of the month. The months of the suspension are not billed and place no order.
+The same goes for any installment paid once the period it was due for is over: the next billing date
+is never in the past.
 
 A physical product takes its stock with each installment order. A virtual product takes it once, with
 the first order.
@@ -215,7 +224,7 @@ which every subscriber has, cannot be deleted. See [Personal data](../security/p
 - No proration when a plan changes.
 - No usage based tiers.
 - No deferred revenue accounting.
-- One line per subscription.
+- One line per subscription, and one subscription per cart, alone in it.
 - A customer who is not signed in cannot subscribe.
 - The unpaid order of an installment of a customer who is erased is left as it is.
 - No payment module of the core charges a stored method without the customer yet. A module has to
