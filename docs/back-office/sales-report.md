@@ -15,17 +15,17 @@ In the back office, open **Reports** then **Sales** (`/admin/reports/sales/categ
 |-----|---------|-------|
 | By category | `/admin/reports/sales/category` | `admin.order` |
 | By product | `/admin/reports/sales/product` | `admin.order` |
-| By customer | `/admin/reports/sales/customer` | `admin.order` and `admin.customer` |
+| By customer | `/admin/reports/sales/customer` | `admin.customer` |
 
-A tab the administrator cannot read is not shown, and its address answers 403. The export button needs `admin.export`.
+A tab the administrator cannot read is not shown, and its address answers 403. An administrator who has `admin.customer` without `admin.order` finds the report in the **Reports** menu and lands on the customer tab. The export button needs `admin.export`.
 
 The period is one of the presets of the dashboard (today, 7 days, 30 days by default, 90 days, this month, this year) or two free dates, up to three years apart and not after today. The previous period ends the day before the period starts and has as many days.
 
 ## Orders counted
 
-By default the report counts the paid orders: those whose status is `paid`, `processing` or `sent`, as the dashboard revenue does. A custom status counts when it is given one of these codes as its equivalent code.
+By default the report counts every order created in the period, whatever its status, as the dashboard revenue does.
 
-A switch counts every order created in the period instead, whatever its status. The screen says which orders it counts next to the switch. The export button is offered for the paid orders only.
+A switch counts the paid orders only: those whose status is `paid`, `processing` or `sent`. A custom status counts when it is given one of these codes as its equivalent code. The screen says which orders it counts next to the switch, and the export button exports the same orders.
 
 An administrator attached to some sale units sees the orders of those units only, on the screen and in the export.
 
@@ -38,6 +38,8 @@ Each line is a category with its revenue including taxes, the revenue of the pre
 - A deleted product, a product without a category, and the products of a category deleted since, are listed under **Uncategorized**. Their sales stay in the revenue.
 - Service lines, such as a gift wrapping, are listed under **Services**.
 - The components of a bundle are not counted as sold: the bundle is.
+- The quantities keep their decimals for the goods sold by weight or volume: 0.4 kg sold reads 0.4.
+- If the category tree holds a loop (a category whose parent is one of its own subcategories), each category of the loop counts a line once.
 
 Under the tree, a table goes from the lines to the revenue: the total of the lines, minus the discounts, plus the shipping costs, gives the revenue of the dashboard for the same period. A discount larger than the goods of its order is counted up to the goods only.
 
@@ -57,15 +59,15 @@ Three years of orders take a few seconds to add up. The screen keeps its figures
 
 ## Export
 
-The export button writes the tab on screen as CSV, over the exact days on screen. The same exports are in the **Reports** category of the export screen, and can be sent by e-mail as scheduled reports:
+The export button writes the tab on screen as CSV, over the exact days and the orders on screen. The same exports are in the **Reports** category of the export screen, and can be sent by e-mail as scheduled reports:
 
-| Export | One line per | Ends with |
-|--------|--------------|-----------|
-| `thelia.export.sales_by_category` | Category, with its path ("Parent > Child") | The discounts, the shipping costs and the total |
-| `thelia.export.sales_by_product` | Product sold, best seller first | |
-| `thelia.export.sales_by_customer` | Customer who ordered, biggest total first | |
+| Export | Paid orders only | One line per | Ends with |
+|--------|------------------|--------------|-----------|
+| `thelia.export.sales_by_category` | `thelia.export.sales_by_category_paid` | Category, with its path ("Parent > Child") | The discounts, the shipping costs and the total |
+| `thelia.export.sales_by_product` | `thelia.export.sales_by_product_paid` | Product sold, best seller first | |
+| `thelia.export.sales_by_customer` | `thelia.export.sales_by_customer_paid` | Customer who ordered, biggest total first | |
 
-The exports count the paid orders. Each line gives the previous period, the change in percent and, for categories and products, the share of the revenue. What a customer or an administrator typed is written as text, so that a spreadsheet does not run it as a formula.
+The first three count every order created in the period, the `_paid` ones the paid orders only. Each line gives the previous period, the change in percent and, for categories and products, the share of the revenue. What a customer or an administrator typed is written as text, so that a spreadsheet does not run it as a formula.
 
 Without a start date, an export runs from the first order of the shop; without an end date, up to today. A period without any sale has no data, and the export reports that no data was found. Sent by e-mail, the report opens on the revenue, its change and the top category, product or customer of the period.
 
@@ -79,7 +81,7 @@ An export run by an administrator attached to some sale units covers those units
 
 ## For developers
 
-`Thelia\Domain\Report\Sales\SalesReportCalculator` is the one computation the screen and the exports read. It takes a `SalesReportCriteria` (start, end, `StatusScope::Paid` or `StatusScope::All`, and the allowed sale unit ids, `null` for all):
+`Thelia\Domain\Report\Sales\SalesReportCalculator` is the one computation the screen and the exports read. It takes a `SalesReportCriteria` (start, end, `StatusScope::All` by default or `StatusScope::Paid`, and the allowed sale unit ids, `null` for all):
 
 | Method | Returns |
 |--------|---------|
@@ -88,7 +90,7 @@ An export run by an administrator attached to some sale units covers those units
 | `byCustomer($criteria, $sort, $descending, $page, $perPage)` | A `SalesPage` of `CustomerSalesRow`, sorted on a `CustomerSort` |
 | `reconciliation($criteria)` | A `SalesReconciliation`: total of the lines, discounts, shipping costs, revenue and number of orders |
 
-`SalesReportCriteria::previous()` gives the previous period. The SQL of an order line total and of an order total, with its rounding rules, is in `Thelia\Domain\Order\Sql\OrderAmountSql`.
+`SalesReportCriteria::previous()` gives the previous period. The SQL of an order line total, of an order total and of a unit price, with their rounding rules, is in `Thelia\Domain\Order\Sql\OrderAmountSql`: a statement built on it binds the order ids the rules turn on with `OrderAmountSql::bindRoundingPivots($statement, $sql)`.
 
 An export restricted to the sale units of the administrator who runs it implements `Thelia\Domain\DataTransfer\Export\SaleUnitScopedExportInterface`. `ExportHandler::export()` hands it the allowed sale unit ids: `null` restricts nothing, and an empty list reaches no order.
 
