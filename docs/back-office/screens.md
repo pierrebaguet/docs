@@ -159,6 +159,7 @@ Some rules decide what comes first and what is shown:
 
 - In each group, a reference, code or title equal to the term comes first, then one starting with it, then one holding it. Orders of equal rank come newest first, the other groups alphabetically.
 - A GTIN is found when it is typed in full: `4006381333931`, `4 006381 333931` or `4006381-333931`. Part of a GTIN finds nothing.
+- A term that is the full reference of a product or a combination, or a GTIN, is looked up through the database indexes, so it answers at once on a large catalog. Products and combinations then list that reference and the references starting with it, not the titles or references that only contain it. Any other term is searched anywhere in the references and the titles.
 - A product found through a combination names that combination under its title.
 - `%`, `_` and quotes are searched as characters.
 - Titles are shown in the language of the administrator, then in the default language of the shop when the title is missing there, then in any language that has one. A title in any language is searched.
