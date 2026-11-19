@@ -93,6 +93,7 @@ through `php Thelia`, and empties the Symfony cache only.
 | [`maintenance:purge`](./maintenance_purge.md) | Purge old data: carts without orders, anonymous carts, admin logs, form firewall records, and the identity of accounts nobody uses anymore. |
 | [`stock:reservation:purge`](./stock_reservation_purge.md) | Clear the stock reservations of cart lines that have run out. |
 | `sale:check-activation` | Check the activation/deactivation dates of sales and apply the required action. |
+| [`thelia:price-list:import`](./thelia_price_list_import.md) | Import the lines of a price list from a CSV file, with `--dry-run` to preview. See [Price Lists](../../features/price-lists.md). |
 | `currency:update-rates` | Update currency exchange rates. |
 | [`report:send-due`](./report_send_due.md) | Send the scheduled reports that are due, each period once. |
 | [`report:mail`](./report_mail.md) | Send one scheduled report now. |
