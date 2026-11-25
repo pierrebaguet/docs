@@ -134,6 +134,10 @@ counter) before and after each call, so it counts everything the page asks, incl
 after the response is sent. It is exact only while nothing else talks to the database server.
 The pages measured and their order are in `setup/volume/pages.yaml` of the core.
 
+After the measure, a browser walks each shop as a person would: a category, a product put into
+the cart, the cart, then the dashboard, lists and sheets of the back office. Every screen
+rendered at every size, without error in the browser console.
+
 ## Measure it yourself
 
 The protocol, with its commands, is in
