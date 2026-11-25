@@ -44,6 +44,9 @@ Reference of 2026-11-17: Thelia core of that day with Flexy `bf04b3b4d` (develop
 | Orders (`/account/orders`) | 88 | 96 | 100 | 100 | 2.98 s | 3.19 s | 0.002 | 0.00 s | 222 KiB | 33 |
 | Purchase lists (`/account/purchase-lists`) | 82 | 98 | 100 | 100 | 3.49 s | 3.63 s | 0.001 | 0.00 s | 255 KiB | 30 |
 
+On mobile, the performance score, FCP and LCP of one measure can land far from these medians:
+on the same code they jump between two values. See [what is not held by a threshold](#what-is-not-held-by-a-threshold).
+
 The home page of the demo is a page of the CMS, with a short text and three teasers.
 
 The product page is the weak point: its first gallery image, the largest element of the page, is loaded lazily and has no dimensions, and the information block below it moves when the images arrive. The search results page scores 66 in SEO because it asks not to be indexed, on purpose.
@@ -100,7 +103,9 @@ shop for the account pages. `--preset mobile` gives the mobile figures.
 
 On another machine the figures move: a faster processor lowers the times, a slower network
 raises them. Compare a measure with another made on the same machine, and read the scores of
-this page as an order of magnitude.
+this page as an order of magnitude. On mobile, compare the times and the performance score with
+the ranges of [what is not held by a threshold](#what-is-not-held-by-a-threshold), not with a
+single median: one measure lands on either of two values.
 
 ## The thresholds
 
@@ -110,24 +115,59 @@ reference moved by the tolerance, and names the page and the metric:
 
 | Metric | Desktop | Mobile |
 |---|---|---|
-| Performance score | −5 points | −25 points |
+| Performance score | −5 points | none |
 | Accessibility score | −2 points | −2 points |
 | Best practices score | −5 points | −5 points |
 | SEO score | −2 points | −2 points |
-| FCP | +25 % +100 ms | +150 % |
-| LCP | +25 % +100 ms | +150 % |
-| CLS | +0.05 | +0.05 |
+| FCP | +25 % +100 ms | none |
+| LCP | +25 % +100 ms, none on the product page | none |
+| CLS | +0.05 | +0.05, none on the product page |
 | TBT | +20 % +50 ms | +50 % +200 ms |
 | Transferred weight | +10 % | +10 % |
 | Requests | +3 | +3 |
 
-The tolerances are set from the gaps between four measures of the same code on GitHub runners,
-so that the noise of a shared machine does not fail the job. On desktop the times moved by 5 %
-at most, except the LCP of the product page, whose lazily loaded image is painted early or late:
-that page has its own LCP tolerance of +100 %. On mobile, Lighthouse simulates a slow network,
-and its times move by steps (up to 92 % for the LCP): they only catch a gross regression. The
-scores other than performance, the layout shift, the blocking time, the weight and the request
-count did not move at all, and keep tight thresholds on both presets.
+The tolerances are set from the gaps between measures of the same code on GitHub runners, so
+that the noise of a shared machine does not fail the job. On desktop the times moved by 25 % at
+most over seven measures (0.68 to 0.85 s on the content page), inside their tolerance, and the
+desktop performance score by 4 points at most. The accessibility, best practices and SEO scores,
+the layout shift, the blocking time, the weight and the request count did not move, except the
+mobile layout shift of the product page, and keep tight thresholds on both presets.
+
+### What is not held by a threshold
+
+Some figures move too much between two measures of the same code to tell a regression from the
+noise. They are measured and published like the others, but fail nothing; the summary of each
+measure lists them under its table, with the reason.
+
+- **Mobile FCP, LCP and performance score.** Lighthouse simulates the slow 4G of the mobile
+  preset from what it recorded during the load. The Google Fonts files of Flexy come from the
+  internet, and finish before or after the real first paint from one run to the next; when they
+  finish before, the simulation counts them, and the times jump by about 1.5 s. Over the 21 runs
+  per page of 2026-11-17, the mobile FCP is 1.68 s when none had finished (median of 52 runs) and 3.18 s when
+  all seven had (median of 91 runs). The performance score follows the times. More runs do not
+  help: a median of 15 runs per page still moves by up to 62 %.
+- **Desktop LCP and mobile CLS of the product page.** Its largest element is the first gallery
+  image, loaded lazily: it is painted early or late, 0.83 to 1.49 s between two measures on
+  desktop. On mobile, the gallery images, which have no dimensions, shift the page or not before
+  Lighthouse stops recording: the CLS is 0.928 or 0 from one run to the next.
+
+Gaps between seven measures of the same code (2026-11-17, median of three runs each):
+
+| Page | Mobile perf. | Mobile FCP | Mobile LCP |
+|---|---|---|---|
+| Home (`/`) | 87 to 99 | 1.67 to 3.18 s | 1.67 to 3.18 s |
+| Contact (`/contact`) | 87 to 99 | 1.68 to 3.18 s | 1.68 to 3.18 s |
+| Content (`/a-propos.html`) | 86 to 99 | 1.67 to 3.07 s | 1.67 to 3.34 s |
+| Search results (`/search?query=t`) | 85 to 91 | 1.70 to 3.26 s | 3.20 to 3.34 s |
+| Category (`/chairs.html`) | 84 to 90 | 1.80 to 3.27 s | 3.41 to 3.49 s |
+| Product (`/barbara-1.html`) | 45 to 74 | 2.58 to 3.19 s | 3.40 to 7.38 s |
+| Account (`/account`) | 86 to 99 | 1.68 to 3.19 s | 1.71 to 3.34 s |
+| Addresses (`/account/addresses`) | 86 to 99 | 1.69 to 3.12 s | 1.86 to 3.33 s |
+| Orders (`/account/orders`) | 87 to 88 | 2.96 to 3.11 s | 3.18 to 3.19 s |
+| Purchase lists (`/account/purchase-lists`) | 82 to 85 | 3.34 to 3.57 s | 3.34 to 3.64 s |
+
+These figures get a threshold again once the theme serves its fonts itself and loads the first
+gallery image without delay, with its dimensions.
 
 The reference is changed by hand, in a commit that says why: after an improvement is acquired,
 to keep it, or when a change accepts a cost and says so. It is never rewritten from the last
